@@ -45,7 +45,7 @@ export default function Game() {
     setPlayerName(name);
     setPlayerTeam(team);
 
-    const s = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
+    const s = io("trivia-production-46ad.up.railway.app", {
 
         transports: ['websocket'], // optional but recommended for production
       });
