@@ -4,6 +4,7 @@ import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 
 const port = parseInt(process.env.PORT || "3000", 10);
+
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
@@ -61,10 +62,12 @@ app.prepare().then(() => {
     },
   });
 
-  expressApp.all("*", (req, res) => handle(req, res));
+  expressApp.all("*", (req, res) => {
+    return handle(req, res);
+  });
 
   io.on("connection", (socket: Socket) => {
-    socket.on("joinGame", ({ name, team }) => {
+    socket.on("joinGame", ({ name, team }: { name: string; team: "team1" | "team2" }) => {
       const isHost = name.toLowerCase() === "wilsonqiu";
       sessions[socket.id] = { name, team, isHost };
       socket.emit("hostAssigned", isHost);
@@ -73,13 +76,16 @@ app.prepare().then(() => {
 
     socket.on("startGame", () => {
       if (!sessions[socket.id]?.isHost) return;
+
       gameState.currentIndex = 0;
       gameState.scores = { team1: 0, team2: 0 };
       gameState.buzzLocked = false;
       buzzTeam = null;
       buzzPlayer = null;
+
       io.emit("scoreUpdate", gameState.scores);
       io.emit("gameState", { state: "scoreboard", payload: gameState.scores });
+
       setTimeout(() => {
         io.emit("gameState", { state: "question", payload: currentQuestion() });
       }, 3000);
@@ -102,7 +108,7 @@ app.prepare().then(() => {
       nextQuestion();
     });
 
-    socket.on("editPoints", ({ team, points }) => {
+    socket.on("editPoints", ({ team, points }: { team: "team1" | "team2"; points: number }) => {
       if (!sessions[socket.id]?.isHost) return;
       gameState.scores[team] = points;
       io.emit("scoreUpdate", gameState.scores);
@@ -111,12 +117,16 @@ app.prepare().then(() => {
     socket.on("buzz", () => {
       const player = sessions[socket.id];
       if (!player || gameState.buzzLocked) return;
+
       buzzTeam = player.team;
       buzzPlayer = player.name;
       gameState.buzzLocked = true;
+
       io.emit("buzzLocked");
       io.emit("showBuzzInfo", { name: buzzPlayer, team: buzzTeam });
+
       io.to(socket.id).emit("promptAnswer", { time: 5 });
+
       answerTimer = setTimeout(() => {
         promptOtherTeam();
       }, 5000);
@@ -125,16 +135,21 @@ app.prepare().then(() => {
     socket.on("submitAnswer", (selected: string) => {
       const player = sessions[socket.id];
       if (!player) return;
+
       const q = currentQuestion();
       if (!q) return;
+
       if (buzzPlayer && player.name !== buzzPlayer) return;
+
       const correct = selected === q.correctAnswer;
       clearTimeout(answerTimer!);
+
       io.emit("answerResult", { correct, player: player.name });
+
       if (correct) {
         gameState.scores[player.team] += q.points;
         io.emit("scoreUpdate", gameState.scores);
-        resetBuzz();
+        resetBuzz(); // Wait for host to go next
       } else {
         promptOtherTeam();
       }
@@ -143,10 +158,13 @@ app.prepare().then(() => {
     function promptOtherTeam() {
       if (!buzzTeam) return;
       const otherTeam = buzzTeam === "team1" ? "team2" : "team1";
+
       buzzTeam = otherTeam;
       buzzPlayer = null;
+
       io.emit("showBuzzInfo", { name: null, team: otherTeam });
       emitToTeam(otherTeam, "promptAnswer", { time: 30 });
+
       answerTimer = setTimeout(() => {
         io.emit("answerResult", { correct: false, player: null });
         resetBuzz();
@@ -157,6 +175,7 @@ app.prepare().then(() => {
       gameState.currentIndex++;
       resetBuzz();
       clearTimeout(answerTimer!);
+
       if (gameState.currentIndex >= gameState.questions.length) {
         io.emit("gameState", { state: "results", payload: gameState.scores });
       } else {
@@ -174,7 +193,7 @@ app.prepare().then(() => {
       return gameState.questions[gameState.currentIndex];
     }
 
-    function emitToTeam(team, event, payload) {
+    function emitToTeam(team: "team1" | "team2", event: string, payload: any) {
       Object.entries(sessions).forEach(([id, s]) => {
         if (s.team === team) {
           io.to(id).emit(event, payload);
