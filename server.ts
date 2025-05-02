@@ -1,7 +1,9 @@
-import { createServer } from "http";
+import express from "express";
 import next from "next";
+import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 
+const port = parseInt(process.env.PORT || "3000", 10);
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
@@ -38,12 +40,6 @@ const gameState = {
       wrongAnswers: ["Jupiter", "Saturn", "Venus"],
       points: 5,
     },
-    {
-      text: "Who wrote 'To Kill a Mockingbird'?",
-      correctAnswer: "Harper Lee",
-      wrongAnswers: ["Mark Twain", "F. Scott Fitzgerald", "Ernest Hemingway"],
-      points: 10,
-    },
   ],
   currentIndex: 0,
   scores: { team1: 0, team2: 0 },
@@ -56,8 +52,18 @@ let buzzPlayer: string | null = null;
 let answerTimer: NodeJS.Timeout | null = null;
 
 app.prepare().then(() => {
-  const server = createServer((req, res) => handle(req, res));
-  const io = new Server(server);
+  const expressApp = express();
+  const httpServer = createServer(expressApp);
+  const io = new Server(httpServer, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"],
+    },
+  });
+
+  expressApp.all("*", (req, res) => {
+    return handle(req, res);
+  });
 
   io.on("connection", (socket: Socket) => {
     socket.on("joinGame", ({ name, team }: { name: string; team: "team1" | "team2" }) => {
@@ -126,8 +132,6 @@ app.prepare().then(() => {
     });
 
     socket.on("submitAnswer", (selected: string) => {
-        //debug 
-        console.log(`Player ${sessions[socket.id]?.name} submitted answer: ${selected}`);
       const player = sessions[socket.id];
       if (!player) return;
 
@@ -138,20 +142,16 @@ app.prepare().then(() => {
 
       const correct = selected === q.correctAnswer;
       clearTimeout(answerTimer!);
-    
-      io.emit("answerResult", { correct, player: player.name, team: player.team });
-    
+
+      io.emit("answerResult", { correct, player: player.name });
+
       if (correct) {
-        // debug line
-        console.log(`Player ${player.name} answered correctly!`);
         gameState.scores[player.team] += q.points;
         io.emit("scoreUpdate", gameState.scores);
-        resetBuzz();
-        
+        resetBuzz(); // Wait for host to go next
       } else {
         promptOtherTeam();
       }
-      
     });
 
     function promptOtherTeam() {
@@ -199,11 +199,9 @@ app.prepare().then(() => {
         }
       });
     }
-  });``
+  });
 
-  const port = parseInt(process.env.PORT || "3000", 10);
-
-  server.listen(port, () => {
-    console.log(`> Ready on http://localhost:${port}`);
+  httpServer.listen(port, () => {
+    console.log(`> Server running at http://localhost:${port}`);
   });
 });
