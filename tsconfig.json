@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "noEmit": true,
+    "outDir": "build",
     "esModuleInterop": true,
     "module": "commonjs",
     "moduleResolution": "node",
@@ -25,6 +25,7 @@
     ]
   },
   "include": [
+    "server.ts",
     "**/*.ts",
     "**/*.tsx",
     "next-env.d.ts",
