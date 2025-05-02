@@ -2,7 +2,7 @@ import QRCode from 'react-qr-code';
 
 export default function Home() {
   // const joinUrl = `${process.env.NEXT_PUBLIC_APP_URL}/join`;
-  const joinUrl = `${window.location.origin}/join`;
+  const joinUrl = "https://triviagame-sigma.vercel.app/join";
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-[var(--background)] text-[var(--foreground)] p-6">
