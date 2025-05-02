@@ -45,7 +45,8 @@ export default function Game() {
     setPlayerName(name);
     setPlayerTeam(team);
 
-    const s = io(process.env.NEXT_PUBLIC_APP_URL!, {
+    const s = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
+
         transports: ['websocket'], // optional but recommended for production
       });
       
