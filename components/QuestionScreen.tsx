@@ -51,6 +51,8 @@ export default function QuestionScreen({ socket, question }: QuestionScreenProps
 
     const handleAnswerResult = ({ correct, player }: { correct: boolean; player: string | null }) => {
       setResult(correct ? "correct" : "incorrect");
+      // setBuzzinfo player to the player without changing the team
+      setBuzzInfo((prev) => ({ ...prev, name: player }));
       setCanAnswer(false);
       setBuzzedIn(true);
     };
@@ -120,7 +122,7 @@ export default function QuestionScreen({ socket, question }: QuestionScreenProps
   </p>
 )}
 
-{buzzInfo.team && result !== 'correct' && (
+{buzzInfo.team && result !== 'correct' && buzzedIn && ( 
   <p className="text-lg">
     {buzzInfo.name ? (
       <>🎯 <strong>{buzzInfo.name}</strong> from <strong>{buzzInfo.team}</strong> is answering!</>

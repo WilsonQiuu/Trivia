@@ -55,7 +55,7 @@ export default function Game() {
 
     s.on("hostAssigned", (flag: boolean) => setIsHost(flag));
 
-    s.on("gameState", ({ state, payload }: { state: "scoreboard" | "question" | "results"; payload: any }) => {
+    s.on("gameState", ({ state, payload }: { state: "scoreboard" | "question" | "results"; payload: Scores | Question }) => {
       setGameState(state);
       if (state === "scoreboard") setScores(payload as Scores);
       if (state === "question") setQuestion(payload as Question);
