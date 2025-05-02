@@ -1,26 +1,47 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Light mode defaults */
+  --background: #f0f4f8; /* light soft blue */
+  --foreground: #1f2937; /* dark blue-gray */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Dark mode colors */
+    --background: #111827; /* very dark navy */
+    --foreground: #f9fafb; /* near-white */
   }
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', 'Arial', sans-serif;
+  min-height: 100vh;
+}
+
+/* Optional: nice heading boost */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+/* Center base pages nicely */
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  min-height: calc(100vh - 4rem);
+}
+
+/* Buttons base style if you want */
+button {
+  @apply px-4 py-2 rounded-lg font-semibold transition-colors;
+}
+
+button:hover {
+  @apply bg-blue-600 text-white;
 }
